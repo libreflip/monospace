@@ -35,7 +35,6 @@ class Bookscanner {
 
     // on an AVR these are 16Bit Values
     int head_pos; // Position of the head in steps from the book
-    int track_len; // distance to the limit switch from the book
     
     bool move_to(int pos);
     void set_drivers(bool state);

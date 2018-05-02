@@ -19,6 +19,9 @@
 #define PES_PUMP 4 // TBC
 #define LAMP 5 // TBC
 
+// Limit Switch
+#define LIM_SW 10 // TBC
+
 Bookscanner::Bookscanner():
     motor(STEPS, DIR_A, DIR_B)
     {
@@ -34,7 +37,6 @@ Bookscanner::Bookscanner():
     // everything is off so we can assume gravity has done 
     // it's job and the box is at the bottom of the track.
     this->head_pos = 0; // resting on the book
-    this->track_len = 0; // we don't know
     
     // Set up Relay board
     pinMode(FAN, OUTPUT);
@@ -49,14 +51,29 @@ Bookscanner::Bookscanner():
     // Box is set up
 }
 
-Bookscanner::~Bookscanner(){
+Bookscanner::~Bookscanner() {
   
+}
+
+Bookscanner::raise_box() {
+    set_drivers(true);
+    while (!read_lim()) {
+        motor.step(1);
+    }
+    head_pos = 32768 //Max 16Bit int
+}
+
+Bookscanner::lower_box() {
+    set_drivers(false);
+    head_pos = 0;
 }
 
 /// Move Head to specified position.
 /// Blocks while moving
 bool Bookscanner::move_to(int pos) {
-    
+    int diff = pos - head_pos;
+    motor.step(diff);
+    head_pos = pos;
 }
 
 /// Presure Sensor Helper
@@ -94,8 +111,16 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     int pos_2 = bs * 0.4;
     int pos_3 = bs * 0.8;
     int pos_4 = bs * 1.05;
+
+    // Here we actually don't care about the track length.
+    // We have a solid 0 point, all we care is that we abort if
+    // We collide with the limit switch
+
+    // TODO: make sure the box is at the bottom first
+
+    // Enable the drivers
+    set_drivers(true);
     
-    //TODO: Get starting Position
     int p_amb = read_pressure_sensor();
     set_fan(true);
     set_vac_pump(true);
@@ -117,5 +142,9 @@ Response Bookscanner::flip_page(uint8_t page_size) {
         set_fan(false);
         
     }
+    // this is dumb cos 0 moved by a few steps when the page turned
+    move_to(pos_0);
+    // disable the drivers, safing the box.
+    set_drivers(false);
 }
 

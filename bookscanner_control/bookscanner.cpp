@@ -55,7 +55,7 @@ Bookscanner::~Bookscanner() {
   
 }
 
-Bookscanner::raise_box() {
+Response Bookscanner::raise_box() {
     set_drivers(true);
     while (!read_lim()) {
         motor.step(1);
@@ -63,7 +63,7 @@ Bookscanner::raise_box() {
     head_pos = 32768 //Max 16Bit int
 }
 
-Bookscanner::lower_box() {
+Response Bookscanner::lower_box() {
     set_drivers(false);
     head_pos = 0;
 }

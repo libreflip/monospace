@@ -9,7 +9,7 @@ cache:
         - "~/.platformio"
 
 env:
-    - PLATFORMIO_CI_SRC=bookscanner_control/bookscanner_control.ino
+    - PLATFORMIO_CI_SRC=bookscanner_control/
 
 install:
     - pip install -U platformio

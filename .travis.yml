@@ -19,4 +19,4 @@ install:
 
 script:
     # https://store.arduino.cc/arduino-uno-rev3
-    - platformio ci --board=uno
+    - platformio ci --lib="." --board=uno

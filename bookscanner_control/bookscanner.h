@@ -2,6 +2,7 @@
 #define bookscanner_h
 #include <Arduino.h>
 #include <Stepper.h>
+#include "SFE_BMP180.h"
 
 typedef char Error;
 #define ERROR_OK 0
@@ -32,12 +33,15 @@ class Bookscanner {
     Response flip_page(uint8_t page_size);
   private:
     Stepper motor;
+    SFE_BMP180 bmp180;
 
     // on an AVR these are 16Bit Values
     int head_pos; // Position of the head in steps from the book
     
     bool move_to(int pos);
     void set_drivers(bool state);
+    bool read_lim();
+    double read_pressure_sensor();
 };
 
 #endif

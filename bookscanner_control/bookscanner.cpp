@@ -23,7 +23,8 @@
 #define LIM_SW 10 // TBC
 
 Bookscanner::Bookscanner():
-    motor(STEPS, DIR_A, DIR_B)
+    motor(STEPS, DIR_A, DIR_B),
+    bmp180()
     {
     // Set up extended Stepper control
     pinMode(PWM_A, OUTPUT);
@@ -48,6 +49,9 @@ Bookscanner::Bookscanner():
     digitalWrite(VAC_PUMP, 0);
     digitalWrite(PES_PUMP, 0);
     digitalWrite(LAMP, 0);
+
+    // Initialise Pressure Sensor
+    bmp180.begin();
     // Box is set up
 }
 
@@ -55,20 +59,20 @@ Bookscanner::~Bookscanner() {
   
 }
 
-Bookscanner::raise_box() {
+Response Bookscanner::raise_box() {
     set_drivers(true);
     while (!read_lim()) {
         motor.step(1);
     }
-    head_pos = 32768 //Max 16Bit int
+    head_pos = 32768; //Max 16Bit int
 }
 
-Bookscanner::lower_box() {
+Response Bookscanner::lower_box() {
     set_drivers(false);
     head_pos = 0;
 }
 
-/// Move Head to specified position.
+/// Move Head to specified position
 /// Blocks while moving
 bool Bookscanner::move_to(int pos) {
     int diff = pos - head_pos;
@@ -77,8 +81,24 @@ bool Bookscanner::move_to(int pos) {
 }
 
 /// Presure Sensor Helper
-int read_pressure_sensor() {
-    
+double Bookscanner::read_pressure_sensor() {
+    char ms = bmp180.startTemperature();
+    if (ms == 0) {
+        //TODO: Error
+    } else {
+        delay(ms);
+    }
+    double t;
+    bmp180.getTemperature(t);
+    ms = bmp180.startPressure(0);
+    if (ms == 0) {
+        //TODO: Error
+    } else {
+        delay(ms);
+    }
+    double p;
+    bmp180.getPressure(p, t);
+    return p;
 }
 
 /// Flutter Fan Helper

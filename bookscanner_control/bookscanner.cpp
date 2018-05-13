@@ -31,9 +31,14 @@ Bookscanner::Bookscanner():
     pinMode(PWM_B, OUTPUT);
     pinMode(BRK_A, OUTPUT);
     pinMode(BRK_B, OUTPUT);
-    // Brakes off; Drivers off%
+    // Brakes off; Drivers off
     digitalWrite(BRK_A, 0);
     digitalWrite(BRK_B, 0);
+    digitalWrite(PWM_A, 0);
+    digitalWrite(PWM_B, 0);
+    drivers = false;
+    //the Brakes here are meaningless, you won't here from them again.
+    
     set_drivers(false);
     // everything is off so we can assume gravity has done 
     // it's job and the box is at the bottom of the track.
@@ -53,10 +58,6 @@ Bookscanner::Bookscanner():
     // Initialise Pressure Sensor
     bmp180.begin();
     // Box is set up
-}
-
-Bookscanner::~Bookscanner() {
-  
 }
 
 Response Bookscanner::raise_box() {
@@ -119,6 +120,18 @@ void set_blow_pump(bool state) {
 void Bookscanner::set_drivers(bool state) {
     digitalWrite(PWM_A, state);
     digitalWrite(PWM_A, state);
+    drivers = state;
+    if (state == false) {
+        head_pos = 0;
+    }
+}
+
+Response Bookscanner::new_response(Error code) {
+    return {
+        code,
+        0,
+        {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
+    };
 }
 
 /// Run a Complete Page flip cycle autonomously
@@ -136,11 +149,15 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     // We have a solid 0 point, all we care is that we abort if
     // We collide with the limit switch
 
-    // TODO: make sure the box is at the bottom first
+    // assert that the drivers are off:
+    if (drivers == true) {
+        // if not error out here:
+        return new_response(ERROR_INVALID_STATE);
+    }
 
     // Enable the drivers
     set_drivers(true);
-    
+
     int p_amb = read_pressure_sensor();
     set_fan(true);
     set_vac_pump(true);
@@ -160,11 +177,11 @@ Response Bookscanner::flip_page(uint8_t page_size) {
         set_vac_pump(false);
         set_blow_pump(false);
         set_fan(false);
-        
     }
     // this is dumb cos 0 moved by a few steps when the page turned
     move_to(pos_0);
     // disable the drivers, safing the box.
     set_drivers(false);
+    return new_response(ERROR_OK);
 }
 

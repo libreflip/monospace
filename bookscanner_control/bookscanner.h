@@ -6,6 +6,7 @@
 
 typedef char Error;
 #define ERROR_OK 0
+#define ERROR_INVALID_STATE 255
 
 typedef struct {
     Error error;
@@ -16,7 +17,6 @@ typedef struct {
 class Bookscanner {
   public:
     Bookscanner();
-    ~Bookscanner();
     
     /// Raises box to maximum position
     Response raise_box();
@@ -37,11 +37,13 @@ class Bookscanner {
 
     // on an AVR these are 16Bit Values
     int head_pos; // Position of the head in steps from the book
+    bool drivers; // current driver state
     
     bool move_to(int pos);
     void set_drivers(bool state);
     bool read_lim();
     double read_pressure_sensor();
+    Response new_response(Error code);
 };
 
 #endif

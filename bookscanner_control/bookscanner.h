@@ -46,4 +46,11 @@ class Bookscanner {
     Response new_response(Error code);
 };
 
+void do_log(int line, const char *key, int val);
+
+#define DEBUG_LOG(key, val) {}
+#ifdef DEBUG
+  #define DEBUG_LOG(key, val) { do_log(__LINE__, key, val); }
+#endif
+
 #endif

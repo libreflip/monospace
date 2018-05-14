@@ -14,13 +14,21 @@
 #define BRK_B 8
 
 // Relay Pins
-#define FAN 1 // TBC
-#define VAC_PUMP 2 // TBC
-#define PES_PUMP 4 // TBC
-#define LAMP 5 // TBC
+#define FAN 7
+#define VAC_PUMP 4
+#define PES_PUMP 5
+#define LAMP 6
 
 // Limit Switch
 #define LIM_SW 10 // TBC
+
+void do_log(int line, const char *key, int val) {
+    Serial.print(line, DEC);
+    Serial.print(" - ");
+    Serial.print(key);
+    Serial.print(": ");
+    Serial.println(val);
+}
 
 Bookscanner::Bookscanner():
     motor(STEPS, DIR_A, DIR_B),
@@ -57,7 +65,15 @@ Bookscanner::Bookscanner():
 
     // Initialise Pressure Sensor
     bmp180.begin();
+
+    // configure Limit switch
+    pinMode(LIM_SW, INPUT_PULLUP);
     // Box is set up
+}
+
+bool Bookscanner::read_lim() {
+    // Normally Closed Switch to ground with pullup
+    return digitalRead(LIM_SW);
 }
 
 Response Bookscanner::raise_box() {
@@ -85,7 +101,7 @@ bool Bookscanner::move_to(int pos) {
 double Bookscanner::read_pressure_sensor() {
     char ms = bmp180.startTemperature();
     if (ms == 0) {
-        //TODO: Error
+        DEBUG_LOG("startTemp failed", 0)
     } else {
         delay(ms);
     }
@@ -93,7 +109,7 @@ double Bookscanner::read_pressure_sensor() {
     bmp180.getTemperature(t);
     ms = bmp180.startPressure(0);
     if (ms == 0) {
-        //TODO: Error
+        DEBUG_LOG("startPressure failed", 0)
     } else {
         delay(ms);
     }

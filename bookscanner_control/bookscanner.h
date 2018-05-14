@@ -17,6 +17,8 @@ typedef struct {
 class Bookscanner {
   public:
     Bookscanner();
+
+    void begin();
     
     /// Raises box to maximum position
     Response raise_box();
@@ -49,8 +51,8 @@ class Bookscanner {
 void do_log(int line, const char *key, int val);
 
 #define DEBUG_LOG(key, val) {}
-#ifdef DEBUG
-  #define DEBUG_LOG(key, val) { do_log(__LINE__, key, val); }
-#endif
+//#ifdef DEBUG
+#define DEBUG_LOG(key, val) { do_log(__LINE__, key, val); }
+//#endif
 
 #endif

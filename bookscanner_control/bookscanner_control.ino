@@ -6,13 +6,23 @@ Bookscanner b = Bookscanner();
 void setup() {
     // put your setup code here, to run once:
     Serial.begin(9600);
+    Serial.println("INIT");
+    b.begin();
+    Serial.println("READY");
+    pinMode(7, OUTPUT);
 }
 
 void loop() {
     char cmd;
+    //digitalWrite(7, 1);
+    //delay(500);
+    //digitalWrite(7, 0);
+    //delay(500);  
+    //Serial.println("Ready");
     if (Serial.available() > 0) {
         // read the incoming byte:
         cmd = Serial.read();
+        Serial.println(cmd);
         switch(cmd) {
         case 'u':
              Serial.print("UP\n");

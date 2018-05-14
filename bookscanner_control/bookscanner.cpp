@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 
-#define STEPS 3200
-#define STEPS_PER_MM 1
+#define STEPS 200
+#define STEPS_PER_MM 30 //6.5
 
 // Motor Shield pins
 #define DIR_A 12
@@ -30,10 +30,29 @@ void do_log(int line, const char *key, int val) {
     Serial.println(val);
 }
 
+/// Flutter Fan Helper
+void set_fan(bool state) {
+    digitalWrite(FAN, !state);
+}
+
+/// Vaccum Pump Helper
+void set_vac_pump(bool state) {
+    digitalWrite(VAC_PUMP, !state);
+}
+
+/// Positive Pressure Pump Helper
+void set_blow_pump(bool state) {
+    digitalWrite(PES_PUMP, !state);
+}
+
 Bookscanner::Bookscanner():
-    motor(STEPS, DIR_A, DIR_B),
+    motor(STEPS, DIR_B, DIR_A),
     bmp180()
     {
+      
+}
+
+void Bookscanner::begin() {
     // Set up extended Stepper control
     pinMode(PWM_A, OUTPUT);
     pinMode(PWM_B, OUTPUT);
@@ -46,6 +65,7 @@ Bookscanner::Bookscanner():
     digitalWrite(PWM_B, 0);
     drivers = false;
     //the Brakes here are meaningless, you won't here from them again.
+    motor.setSpeed(60);
     
     set_drivers(false);
     // everything is off so we can assume gravity has done 
@@ -58,29 +78,35 @@ Bookscanner::Bookscanner():
     pinMode(PES_PUMP, OUTPUT);
     pinMode(LAMP, OUTPUT);
     // Set everything off
-    digitalWrite(FAN, 0);
-    digitalWrite(VAC_PUMP, 0);
-    digitalWrite(PES_PUMP, 0);
-    digitalWrite(LAMP, 0);
+    set_fan(false);
+    set_blow_pump(false);
+    set_vac_pump(false);
+    digitalWrite(FAN, 1);
+    digitalWrite(VAC_PUMP, 1);
+    digitalWrite(PES_PUMP, 1);
+    digitalWrite(LAMP, 1);
 
     // Initialise Pressure Sensor
     bmp180.begin();
 
     // configure Limit switch
     pinMode(LIM_SW, INPUT_PULLUP);
+    DEBUG_LOG("READY", 1);
     // Box is set up
 }
 
 bool Bookscanner::read_lim() {
-    // Normally Closed Switch to ground with pullup
+    // Normally Open Switch to ground with pullup
     return digitalRead(LIM_SW);
 }
 
 Response Bookscanner::raise_box() {
+    DEBUG_LOG("RAISING", 1);
     set_drivers(true);
     while (!read_lim()) {
         motor.step(1);
     }
+    DEBUG_LOG("LIM_HIT", 1);
     head_pos = 32768; //Max 16Bit int
 }
 
@@ -93,7 +119,7 @@ Response Bookscanner::lower_box() {
 /// Blocks while moving
 bool Bookscanner::move_to(int pos) {
     int diff = pos - head_pos;
-    motor.step(diff);
+    motor.step(diff*-1);
     head_pos = pos;
 }
 
@@ -118,24 +144,9 @@ double Bookscanner::read_pressure_sensor() {
     return p;
 }
 
-/// Flutter Fan Helper
-void set_fan(bool state) {
-    digitalWrite(FAN, state);
-}
-
-/// Vaccum Pump Helper
-void set_vac_pump(bool state) {
-    digitalWrite(VAC_PUMP, state);
-}
-
-/// Positive Pressure Pump Helper
-void set_blow_pump(bool state) {
-    digitalWrite(PES_PUMP, state);
-}
-
 void Bookscanner::set_drivers(bool state) {
     digitalWrite(PWM_A, state);
-    digitalWrite(PWM_A, state);
+    digitalWrite(PWM_B, state);
     drivers = state;
     if (state == false) {
         head_pos = 0;
@@ -153,14 +164,18 @@ Response Bookscanner::new_response(Error code) {
 /// Run a Complete Page flip cycle autonomously
 /// @param page_size: Size of the page we are flipping in mm
 Response Bookscanner::flip_page(uint8_t page_size) {
-    int bs = STEPS_PER_MM * page_size;
+    float bs = STEPS_PER_MM * page_size;
     // Position Table
     int pos_0 = 0;
     int pos_1 = bs * 0.5;
     int pos_2 = bs * 0.4;
     int pos_3 = bs * 0.8;
     int pos_4 = bs * 1.05;
-
+    DEBUG_LOG("POS1", pos_1);
+    DEBUG_LOG("POS2", pos_2);
+    DEBUG_LOG("POS3", pos_3);
+    DEBUG_LOG("POS4", pos_4);
+    
     // Here we actually don't care about the track length.
     // We have a solid 0 point, all we care is that we abort if
     // We collide with the limit switch
@@ -174,12 +189,12 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     // Enable the drivers
     set_drivers(true);
 
-    int p_amb = read_pressure_sensor();
+    //int p_amb = read_pressure_sensor();
     set_fan(true);
     set_vac_pump(true);
     move_to(pos_1);
-    int p_pickup = read_pressure_sensor();
-    if (p_pickup < p_amb) {
+    //int p_pickup = read_pressure_sensor();
+    //if (p_pickup < p_amb) {
         set_fan(false);
         move_to(pos_2);
         move_to(pos_3);
@@ -189,11 +204,11 @@ Response Bookscanner::flip_page(uint8_t page_size) {
         move_to(pos_3);
         set_blow_pump(false);
         move_to(pos_0);
-    } else {
-        set_vac_pump(false);
-        set_blow_pump(false);
-        set_fan(false);
-    }
+    //} else {
+    //    set_vac_pump(false);
+    //    set_blow_pump(false);
+    //    set_fan(false);
+    //}
     // this is dumb cos 0 moved by a few steps when the page turned
     move_to(pos_0);
     // disable the drivers, safing the box.

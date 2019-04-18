@@ -3,41 +3,47 @@
 
 Bookscanner b = Bookscanner();
 
+#define BOX         0b00000010
+#define LIGHT       0b00000100
+#define FLIP        0b00001000
+
+#define ON          0b00000001
+#define OFF         0b00000000
+
+
 void setup() {
     // put your setup code here, to run once:
     Serial.begin(9600);
-    Serial.println("INIT");
     b.begin();
-    Serial.println("READY");
-    pinMode(7, OUTPUT);
+    b.raise_box();
 }
 
 void loop() {
-    char cmd;
-    //digitalWrite(7, 1);
-    //delay(500);
-    //digitalWrite(7, 0);
-    //delay(500);  
-    //Serial.println("Ready");
-    if (Serial.available() > 0) {
-        // read the incoming byte:
+     char cmd;
+     char payload;
+
+     // send data only when you receive data:
+     if (Serial.available() > 0) {
         cmd = Serial.read();
-        Serial.println(cmd);
+        payload = Serial.read();
+
         switch(cmd) {
-        case 'u':
-             Serial.print("UP\n");
-             b.raise_box();
-             break;
-        case 'd':
-             Serial.print("DOWN\n");
-             b.lower_box();
-             break;
-        case 'f':
-             Serial.print("FLIP\n");
-             // fuk it I am hardcoding it, 
-             // rebuild it if you wanna change it
-             b.flip_page(100);
-             break;
+            case BOX:
+                if(payload) b.raise_box();
+                else        b.lower_box();
+                break;
+
+            case LIGHT:
+                if(payload) b.set_lights(true);
+                else        b.set_lights(false);
+                break;
+
+            case FLIP:      b.raise_box();
+            default:        break;
         }
-    }
+
+        Serial.write(cmd);
+        Serial.write(payload);
+     }
 }
+

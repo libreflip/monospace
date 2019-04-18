@@ -11,7 +11,7 @@ typedef char Error;
 typedef struct {
     Error error;
     char payload_len;
-    char payload[16]; 
+    char payload[16];
 } Response;
 
 class Bookscanner {
@@ -19,7 +19,7 @@ class Bookscanner {
     Bookscanner();
 
     void begin();
-    
+
     /// Raises box to maximum position
     Response raise_box();
 
@@ -40,7 +40,7 @@ class Bookscanner {
     // on an AVR these are 16Bit Values
     int head_pos; // Position of the head in steps from the book
     bool drivers; // current driver state
-    
+
     bool move_to(int pos);
     void set_drivers(bool state);
     bool read_lim();

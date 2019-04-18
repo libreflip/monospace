@@ -49,7 +49,7 @@ Bookscanner::Bookscanner():
     motor(STEPS, DIR_B, DIR_A),
     bmp180()
     {
-      
+
 }
 
 void Bookscanner::begin() {
@@ -66,12 +66,12 @@ void Bookscanner::begin() {
     drivers = false;
     //the Brakes here are meaningless, you won't here from them again.
     motor.setSpeed(60);
-    
+
     set_drivers(false);
-    // everything is off so we can assume gravity has done 
+    // everything is off so we can assume gravity has done
     // it's job and the box is at the bottom of the track.
     this->head_pos = 0; // resting on the book
-    
+
     // Set up Relay board
     pinMode(FAN, OUTPUT);
     pinMode(VAC_PUMP, OUTPUT);
@@ -113,6 +113,11 @@ Response Bookscanner::raise_box() {
 Response Bookscanner::lower_box() {
     set_drivers(false);
     head_pos = 0;
+}
+
+/// Illumination assistence
+Response Bookscanner::set_lights(bool state) {
+  digitalWrite(LAMP, !state);
 }
 
 /// Move Head to specified position
@@ -175,7 +180,7 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     DEBUG_LOG("POS2", pos_2);
     DEBUG_LOG("POS3", pos_3);
     DEBUG_LOG("POS4", pos_4);
-    
+
     // Here we actually don't care about the track length.
     // We have a solid 0 point, all we care is that we abort if
     // We collide with the limit switch

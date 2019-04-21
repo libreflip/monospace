@@ -41,12 +41,10 @@ void loop() {
             case BOX:
                 if(payload) reply(b.raise_box());
                 else        reply(b.lower_box());
-                break;
+                            break;
 
-            case LIGHT:
-                if(payload) reply(b.set_lights(true));
-                else        reply(b.set_lights(false));
-                break;
+            case LIGHT:     reply(b.set_lights(payload));
+                            break;
 
             case FLIP:      reply(b.flip_page(payload));
             default:        break;

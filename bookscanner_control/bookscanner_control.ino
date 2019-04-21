@@ -18,32 +18,39 @@ void setup() {
     b.raise_box();
 }
 
+void reply(Response resp) {
+    Serial.write(resp.error);
+    Serial.write(resp.payload_len);
+
+    for(int i = 0; i < resp.payload_len; i++) {
+        Serial.write(resp.payload[i]);
+    }
+}
+
 void loop() {
      char cmd;
      char payload;
 
-     // send data only when you receive data:
-     if (Serial.available() > 0) {
+     // A command is 2 bytes long so we want to have
+     // at least that amount to read
+     if (Serial.available() >= 2) {
         cmd = Serial.read();
         payload = Serial.read();
 
         switch(cmd) {
             case BOX:
-                if(payload) b.raise_box();
-                else        b.lower_box();
+                if(payload) reply(b.raise_box());
+                else        reply(b.lower_box());
                 break;
 
             case LIGHT:
-                if(payload) b.set_lights(true);
-                else        b.set_lights(false);
+                if(payload) reply(b.set_lights(true));
+                else        reply(b.set_lights(false));
                 break;
 
-            case FLIP:      b.raise_box();
+            case FLIP:      reply(b.flip_page(payload));
             default:        break;
         }
-
-        Serial.write(cmd);
-        Serial.write(payload);
      }
 }
 

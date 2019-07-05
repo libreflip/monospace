@@ -4,7 +4,7 @@ import sys
 
 port = sys.argv[1]
 
-s = Serial('/dev/'+port, baud=9600, timeout=1)
+s = Serial('/dev/'+port, 9600, timeout=1)
 
 while True:
     print("Menu:")
@@ -16,27 +16,27 @@ while True:
     print("\n6. Exit")
     print("\n %: ", end = '')
 
-    c = int(raw_input())
+    c = int(input())
     if c == 1:
         s.write(b'\x02\x01')
         back = s.read(100)
-        print(hex(back))
+        print(back)
     if c == 2:
         s.write(b'\x02\x00')
         back = s.read(100)
-        print(hex(back))
+        print(back)
     if c == 3:
         s.write(b'\x04\x01')
         back = s.read(100)
-        print(hex(back))
+        print(back)
     if c == 4:
-        s.write(b'\x04\x00')
+        s.write(b'\x04\x00') #C-C++ Reverenz 2nd edition
         back = s.read(100)
-        print(hex(back))
+        print(back)
     if c == 5:
-        s.write(b'\x08\x00')
-        back = s.read(100)
-        print(hex(back))
+        s.write(b'\x08\x13')
+        back = s.read(800)
+        print(back)
     if c == 6:
         break
 

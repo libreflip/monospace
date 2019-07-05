@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 #define STEPS 200
-#define STEPS_PER_MM 30 //6.5
+#define STEPS_PER_MM 34 //6.5
 
 // Motor Shield pins
 #define DIR_A 12
@@ -65,7 +65,7 @@ void Bookscanner::begin() {
     digitalWrite(PWM_B, 0);
     drivers = false;
     //the Brakes here are meaningless, you won't here from them again.
-    motor.setSpeed(60);
+    motor.setSpeed(50);
 
     set_drivers(false);
     // everything is off so we can assume gravity has done
@@ -108,6 +108,7 @@ Response Bookscanner::raise_box() {
     }
     DEBUG_LOG("LIM_HIT", 1);
     head_pos = 32768; //Max 16Bit int
+    set_drivers(false);
     return new_response(ERROR_OK);
 }
 
@@ -127,7 +128,7 @@ Response Bookscanner::set_lights(bool state) {
 /// Blocks while moving
 bool Bookscanner::move_to(int pos) {
     int diff = pos - head_pos;
-    motor.step(diff*-1);
+    motor.step(diff);
     head_pos = pos;
 }
 
@@ -195,23 +196,31 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     }
 
     // Enable the drivers
+    head_pos = 0;
     set_drivers(true);
 
     //int p_amb = read_pressure_sensor();
     set_fan(true);
     set_vac_pump(true);
     move_to(pos_1);
+    DEBUG_LOG("MOVED TO POSITION 1", 1);
+    
     //int p_pickup = read_pressure_sensor();
     //if (p_pickup < p_amb) {
         set_fan(false);
         move_to(pos_2);
+     DEBUG_LOG("MOVED TO POSITION 2", 1);
         move_to(pos_3);
+     DEBUG_LOG("MOVED TO POSITION 3", 1);
         set_blow_pump(true);
         move_to(pos_4);
+     DEBUG_LOG("MOVED TO POSITION 4", 1);
         set_vac_pump(false);
         move_to(pos_3);
+     DEBUG_LOG("MOVED TO POSITION 5", 1);
         set_blow_pump(false);
         move_to(pos_0);
+     DEBUG_LOG("MOVED TO POSITION 0", 1);
     //} else {
     //    set_vac_pump(false);
     //    set_blow_pump(false);
@@ -219,8 +228,8 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     //}
     // this is dumb cos 0 moved by a few steps when the page turned
     move_to(pos_0);
+    DEBUG_LOG("MOVED TO POSITION 0", 1);
     // disable the drivers, safing the box.
     set_drivers(false);
     return new_response(ERROR_OK);
 }
-

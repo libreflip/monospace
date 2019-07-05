@@ -108,16 +108,19 @@ Response Bookscanner::raise_box() {
     }
     DEBUG_LOG("LIM_HIT", 1);
     head_pos = 32768; //Max 16Bit int
+    return new_response(ERROR_OK);
 }
 
 Response Bookscanner::lower_box() {
     set_drivers(false);
     head_pos = 0;
+    return new_response(ERROR_OK);
 }
 
 /// Illumination assistence
 Response Bookscanner::set_lights(bool state) {
-  digitalWrite(LAMP, !state);
+    digitalWrite(LAMP, !state);
+    return new_response(ERROR_OK);
 }
 
 /// Move Head to specified position

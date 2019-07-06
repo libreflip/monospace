@@ -39,9 +39,14 @@ while True:
     if c == 3:
         s.write(b'\x04\x01')
     if c == 4:
-        s.write(b'\x04\x00') #C-C++ Reverenz 2nd edition
+        s.write(b'\x04\x00')
     if c == 5:
-        s.write(b'\x08\x13')
+        print('Book Height (mm) = ', end='')
+        h = int(input())
+        if h > 255:
+            print('Book Too Large')
+        else:
+            s.write(b'\x08'+bytes([h])) #C-C++ Reverenz 2nd edition
     if c == 6:
         running.clear()
         th.join()

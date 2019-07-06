@@ -178,7 +178,7 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     int pos_0 = 0;
     int pos_1 = bs * 0.5;
     int pos_2 = bs * 0.4;
-    int pos_3 = bs * 0.8;
+    int pos_3 = bs * 0.5;
     int pos_4 = bs * 1.05;
     DEBUG_LOG("POS1", pos_1);
     DEBUG_LOG("POS2", pos_2);
@@ -212,15 +212,16 @@ Response Bookscanner::flip_page(uint8_t page_size) {
      DEBUG_LOG("MOVED TO POSITION 2", 1);
         move_to(pos_3);
      DEBUG_LOG("MOVED TO POSITION 3", 1);
-        set_blow_pump(true);
+              //  set_blow_pump(true);
         move_to(pos_4);
+
      DEBUG_LOG("MOVED TO POSITION 4", 1);
         set_vac_pump(false);
         move_to(pos_3);
-     DEBUG_LOG("MOVED TO POSITION 5", 1);
+     DEBUG_LOG("MOVED TO POSITION 3", 1);
         set_blow_pump(false);
         move_to(pos_0);
-     DEBUG_LOG("MOVED TO POSITION 0", 1);
+     DEBUG_LOG("MOVED TO POSITION 4", 1);
     //} else {
     //    set_vac_pump(false);
     //    set_blow_pump(false);

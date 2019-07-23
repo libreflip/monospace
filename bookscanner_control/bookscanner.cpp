@@ -1,17 +1,21 @@
 #include "bookscanner.h"
 
 #include <Arduino.h>
+#include <SPI.h>
 
 #define STEPS 200
 #define STEPS_PER_MM 34 //6.5
+#define US_PER_STEP 2000
 
-// Motor Shield pins
-#define DIR_A 12
-#define DIR_B 13
-#define PWM_A 3
-#define PWM_B 11
-#define BRK_A 9
-#define BRK_B 8
+// Motor Directions
+#define UP 1
+#define DOWN 0
+
+// 35V4 Pins
+#define CSPIN 9
+#define SLEEPPIN 8
+#define FAULTPIN 3
+#define STALLPIN 2
 
 // Relay Pins
 #define FAN 7
@@ -46,27 +50,30 @@ void set_blow_pump(bool state) {
 }
 
 Bookscanner::Bookscanner():
-    motor(STEPS, DIR_B, DIR_A),
+    motor(),
     bmp180()
-    {
-
+{
 }
 
 void Bookscanner::begin() {
-    // Set up extended Stepper control
-    pinMode(PWM_A, OUTPUT);
-    pinMode(PWM_B, OUTPUT);
-    pinMode(BRK_A, OUTPUT);
-    pinMode(BRK_B, OUTPUT);
-    // Brakes off; Drivers off
-    digitalWrite(BRK_A, 0);
-    digitalWrite(BRK_B, 0);
-    digitalWrite(PWM_A, 0);
-    digitalWrite(PWM_B, 0);
     drivers = false;
-    //the Brakes here are meaningless, you won't here from them again.
-    motor.setSpeed(50);
+    pinMode(SLEEPPIN, OUTPUT);
+    digitalWrite(SLEEPPIN, HIGH);
+    SPI.begin();
+    motor.setChipSelectPin(CSPIN);
+    delay(1);
+    motor.resetSettings();
+    motor.clearStatus();
 
+    // Select auto mixed decay.  TI's DRV8711 documentation recommends this mode
+    // for most applications, and we find that it usually works well.
+    motor.setDecayMode(HPSDDecayMode::AutoMixed);
+
+    // Set the current limit. You should change the number here to an appropriate
+    // value for your particular system.
+    motor.setCurrentMilliamps36v4(1000);
+    motor.setStepMode(HPSDStepMode::MicroStep32);
+    
     set_drivers(false);
     // everything is off so we can assume gravity has done
     // it's job and the box is at the bottom of the track.
@@ -103,8 +110,10 @@ bool Bookscanner::read_lim() {
 Response Bookscanner::raise_box() {
     DEBUG_LOG("RAISING", 1);
     set_drivers(true);
+    motor.setDirection(UP);
     while (!read_lim()) {
-        motor.step(1);
+        motor.step();
+        delayMicroseconds(US_PER_STEP); 
     }
     DEBUG_LOG("LIM_HIT", 1);
     head_pos = 32768; //Max 16Bit int
@@ -113,6 +122,13 @@ Response Bookscanner::raise_box() {
 }
 
 Response Bookscanner::lower_box() {
+    DEBUG_LOG("LOWERING", 1);
+    set_drivers(true);
+    motor.setDirection(DOWN);
+    while (digitalRead(STALLPIN)) {
+        motor.step();
+        delayMicroseconds(US_PER_STEP); 
+    }
     set_drivers(false);
     head_pos = 0;
     return new_response(ERROR_OK);
@@ -128,7 +144,16 @@ Response Bookscanner::set_lights(bool state) {
 /// Blocks while moving
 bool Bookscanner::move_to(int pos) {
     int diff = pos - head_pos;
-    motor.step(diff);
+    if (diff < 0) {
+        motor.setDirection(DOWN);
+        diff *= -1;
+    } else {
+        motor.setDirection(UP);
+    }
+    for (int i = 0; i < diff; i++) {
+      motor.step();
+      delayMicroseconds(US_PER_STEP); 
+    }
     head_pos = pos;
 }
 
@@ -154,11 +179,12 @@ double Bookscanner::read_pressure_sensor() {
 }
 
 void Bookscanner::set_drivers(bool state) {
-    digitalWrite(PWM_A, state);
-    digitalWrite(PWM_B, state);
     drivers = state;
     if (state == false) {
+        motor.disableDriver();
         head_pos = 0;
+    } else {
+        motor.enableDriver();
     }
 }
 

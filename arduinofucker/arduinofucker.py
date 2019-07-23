@@ -9,7 +9,7 @@ running.set()
 
 def thread_read(ser):
     while running.is_set():
-        buf = ser.readline(1024)
+        buf = ser.readline(1)
         if buf != b'':
             print(buf)
 

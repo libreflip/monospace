@@ -1,7 +1,8 @@
+#include <HighPowerStepperDriver.h>
+
 #ifndef bookscanner_h
 #define bookscanner_h
 #include <Arduino.h>
-#include <Stepper.h>
 #include "SFE_BMP180.h"
 
 typedef char Error;
@@ -34,7 +35,7 @@ class Bookscanner {
     /// @param page_size: Size of the page we are flipping in mm
     Response flip_page(uint8_t page_size);
   private:
-    Stepper motor;
+    HighPowerStepperDriver motor;
     SFE_BMP180 bmp180;
 
     // on an AVR these are 16Bit Values

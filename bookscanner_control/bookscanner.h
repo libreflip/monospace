@@ -1,7 +1,8 @@
+#ifndef LIBREFLIP_BOOKSCANNER_H
+#define LIBREFLIP_BOOKSCANNER_H
+
 #include <HighPowerStepperDriver.h>
 
-#ifndef bookscanner_h
-#define bookscanner_h
 #include <Arduino.h>
 #include "SFE_BMP180.h"
 
@@ -56,4 +57,4 @@ void do_log(int line, const char *key, int val);
 #define DEBUG_LOG(key, val) { do_log(__LINE__, key, val); }
 //#endif
 
-#endif
+#endif //LIBREFLIP_BOOKSCANNER_H

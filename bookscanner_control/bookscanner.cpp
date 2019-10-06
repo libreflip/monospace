@@ -24,7 +24,7 @@
 #define LAMP 6
 
 // Limit Switch
-#define LIM_SW 10 // TBC
+#define LIM_SW A0 // TBC
 
 void do_log(int line, const char *key, int val) {
     Serial.print(line, DEC);
@@ -71,10 +71,10 @@ void Bookscanner::begin() {
 
     // Set the current limit. You should change the number here to an appropriate
     // value for your particular system.
-    motor.setCurrentMilliamps36v4(1000);
-    motor.setStepMode(HPSDStepMode::MicroStep32);
+    motor.setCurrentMilliamps36v4(3000);
+    motor.setStepMode(HPSDStepMode::MicroStep1);
     
-    set_drivers(false);
+    //set_drivers(false);
     // everything is off so we can assume gravity has done
     // it's job and the box is at the bottom of the track.
     this->head_pos = 0; // resting on the book
@@ -100,6 +100,15 @@ void Bookscanner::begin() {
     pinMode(LIM_SW, INPUT_PULLUP);
     DEBUG_LOG("READY", 1);
     // Box is set up
+
+    motor.enableDriver();
+   motor.setDirection(UP);
+    for(unsigned int x = 0; x < 1000; x++)
+    {
+      motor.step();
+     delayMicroseconds(US_PER_STEP);
+   }
+    
 }
 
 bool Bookscanner::read_lim() {
@@ -123,13 +132,13 @@ Response Bookscanner::raise_box() {
 
 Response Bookscanner::lower_box() {
     DEBUG_LOG("LOWERING", 1);
-    set_drivers(true);
+    //set_drivers(true);
     motor.setDirection(DOWN);
     while (digitalRead(STALLPIN)) {
         motor.step();
         delayMicroseconds(US_PER_STEP); 
     }
-    set_drivers(false);
+    //set_drivers(false);
     head_pos = 0;
     return new_response(ERROR_OK);
 }
@@ -223,7 +232,7 @@ Response Bookscanner::flip_page(uint8_t page_size) {
 
     // Enable the drivers
     head_pos = 0;
-    set_drivers(true);
+    //set_drivers(true);
 
     //int p_amb = read_pressure_sensor();
     set_fan(true);
@@ -257,6 +266,6 @@ Response Bookscanner::flip_page(uint8_t page_size) {
     move_to(pos_0);
     DEBUG_LOG("MOVED TO POSITION 0", 1);
     // disable the drivers, safing the box.
-    set_drivers(false);
+    //set_drivers(false);
     return new_response(ERROR_OK);
 }

@@ -15,7 +15,7 @@ void setup() {
     // put your setup code here, to run once:
     Serial.begin(9600);
     b.begin();
-    b.raise_box();
+    //b.raise_box();
 }
 
 void reply(Response resp) {

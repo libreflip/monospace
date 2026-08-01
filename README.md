@@ -88,7 +88,3 @@ persistent interactive session, streamed pressure logging to CSV — use
 ([`sans-core/README.md`](https://github.com/libreflip/sans/blob/master/sans-core/README.md)),
 which also has real measured pressure-drop test results under
 `sans-core/test-results/`.
-
-`arduinofucker/arduinofucker.py` is an older interactive Python test tool
-predating `hw_diag` (built for the previous binary protocol) — kept as a
-documented fallback, not the primary path.

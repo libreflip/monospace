@@ -1,20 +1,8 @@
 #ifndef LIBREFLIP_BOOKSCANNER_H
 #define LIBREFLIP_BOOKSCANNER_H
 
-#include <HighPowerStepperDriver.h>
-
 #include <Arduino.h>
 #include "SFE_BMP180.h"
-
-typedef char Error;
-#define ERROR_OK 0
-#define ERROR_INVALID_STATE 255
-
-typedef struct {
-    Error error;
-    char payload_len;
-    char payload[16];
-} Response;
 
 class Bookscanner {
   public:
@@ -22,39 +10,35 @@ class Bookscanner {
 
     void begin();
 
-    /// Raises box to maximum position
-    Response raise_box();
+    /// Set vacuum pump relay state
+    void set_vacuum(bool state);
 
-    /// Lowers box to minimum position and recalibrate 0 position.
-    Response lower_box();
+    /// Set page-separation ("flutter") fan relay state
+    void set_fan(bool state);
 
-    /// Set box lighting
-    /// @param state: new lighting state,
-    Response set_lights(bool state);
+    /// Set turn-blower ("positive pressure pump") relay state
+    void set_blower(bool state);
 
-    /// Run a Complete Page flip cycle autonomously
-    /// @param page_size: Size of the page we are flipping in mm
-    Response flip_page(uint8_t page_size);
+    /// Set light relay state
+    void set_light(bool state);
+
+    /// Atomically de-energize vacuum, fan, and blower (light untouched)
+    void all_off();
+
+    /// Single-shot averaged pressure read (mbar) — accuracy-favoring
+    float press_once();
+
+    /// Single fast pressure sample (mbar) — rate-favoring, for streaming
+    float press_stream_sample();
+
   private:
-    HighPowerStepperDriver motor;
     SFE_BMP180 bmp180;
 
-    // on an AVR these are 16Bit Values
-    int head_pos; // Position of the head in steps from the book
-    bool drivers; // current driver state
-
-    bool move_to(int pos);
-    void set_drivers(bool state);
-    bool read_lim();
-    double read_pressure_sensor();
-    Response new_response(Error code);
+    float read_pressure_avg(char oversampling, int n);
 };
 
 void do_log(int line, const char *key, int val);
 
-#define DEBUG_LOG(key, val) {}
-//#ifdef DEBUG
 #define DEBUG_LOG(key, val) { do_log(__LINE__, key, val); }
-//#endif
 
 #endif //LIBREFLIP_BOOKSCANNER_H

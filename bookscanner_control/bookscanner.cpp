@@ -101,5 +101,9 @@ float Bookscanner::press_once() {
 }
 
 float Bookscanner::press_stream_sample() {
-    return read_pressure_avg(0, 1);
+    // Oversampling=2: measured ~49Hz / ~0.034mbar stdev on real hardware,
+    // vs. OSS=0's ~78Hz / ~0.051mbar stdev - noticeably less per-sample
+    // noise while still comfortably clear of the >=5Hz floor and close
+    // to the <=50Hz ideal (monospace.md §6).
+    return read_pressure_avg(2, 1);
 }

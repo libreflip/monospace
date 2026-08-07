@@ -2,6 +2,7 @@
 
 #include <avr/wdt.h>
 #include <string.h>
+#include <stdlib.h>
 
 Bookscanner b = Bookscanner();
 
@@ -9,6 +10,24 @@ Bookscanner b = Bookscanner();
 char linebuf[LINEBUF_SIZE];
 uint8_t linelen = 0;
 bool streaming = false;
+
+// Parse exactly three space-separated decimal 0..255 values from `s` into
+// `out`. Returns false on wrong count, non-numeric tokens (including a
+// leading sign), out-of-range values, or trailing junk. Used only by the
+// `LED SET` command below.
+bool parse_led_args(const char *s, int *out) {
+    char *end;
+    for (int i = 0; i < 3; i++) {
+        while (*s == ' ') s++;
+        if (*s < '0' || *s > '9') return false;  // require a digit; rejects sign/empty
+        long v = strtol(s, &end, 10);
+        if (end == s || v < 0 || v > 255) return false;
+        out[i] = (int)v;
+        s = end;
+    }
+    while (*s == ' ') s++;
+    return *s == '\0';  // nothing but trailing spaces may remain
+}
 
 void handle_line(char *line) {
     if      (!strcmp(line, "VACUUM ON"))    { b.set_vacuum(true);  Serial.println(F("OK")); }
@@ -23,6 +42,15 @@ void handle_line(char *line) {
     else if (!strcmp(line, "PRESS?"))       { Serial.print(F("OK ")); Serial.println(b.press_once(), 2); }
     else if (!strcmp(line, "PRESS START"))  { streaming = true;    Serial.println(F("OK")); }
     else if (!strcmp(line, "PRESS STOP"))   { streaming = false;   Serial.println(F("OK")); }
+    else if (!strncmp(line, "LED SET ", 8)) {
+        int rgb[3];
+        if (parse_led_args(line + 8, rgb)) {
+            b.set_led((uint8_t)rgb[0], (uint8_t)rgb[1], (uint8_t)rgb[2]);
+            Serial.println(F("OK"));
+        } else {
+            Serial.println(F("ERR BAD_ARGS"));
+        }
+    }
     else { Serial.println(F("ERR UNKNOWN_COMMAND")); }
 }
 
@@ -64,6 +92,14 @@ void loop() {
             // Line too long for the buffer — drop it rather than overflow.
             linelen = 0;
         }
+    }
+
+    // Unsolicited button event (monospace.md §5/§10.2). Emitted on its own
+    // initiative on each debounced press edge, independent of streaming
+    // state; the host tells it apart from command responses by the `EVENT `
+    // prefix (§4).
+    if (b.poll_button()) {
+        Serial.println(F("EVENT BUTTON PRESSED"));
     }
 
     if (streaming) {

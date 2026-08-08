@@ -1,8 +1,9 @@
 # monospace
 
 Arduino Uno firmware controlling the Libreflip bookscanner's relay board
-(vacuum pump, page-separation fan, turn blower, light) and reading its
-BMP180 air-pressure sensor. It's deliberately "dumb": it never decides
+(vacuum pump, page-separation fan, turn blower, light), reading its BMP180
+air-pressure sensor, and handling the Start/Stop/E-Stop button + RGB status
+LED. It's deliberately "dumb": it never decides
 *when* to switch anything on — it receives one text command per line over
 USB-serial from the Raspberry Pi, executes it immediately, and replies. All
 process logic (when to engage vacuum, when a page has separated, when to
@@ -40,10 +41,11 @@ needed.
 Text-based, one command per line, **115200 baud**, `\n`-terminated (an
 optional preceding `\r` is tolerated), ASCII, **case-sensitive uppercase
 commands only**. Every command gets exactly one reply line — `OK` on
-success, `ERR <reason>` on failure — except while pressure streaming is
-active, when unsolicited `PRESS <mbar>` lines are also emitted (told apart
-by the `PRESS ` prefix; every other line is still the reply to whichever
-command preceded it).
+success, `ERR <reason>` on failure — except for two kinds of unsolicited
+line: `PRESS <mbar>` telemetry (only while pressure streaming is active) and
+`EVENT BUTTON PRESSED` (emitted on each debounced button press, regardless of
+streaming state). Both are told apart by their prefix (`PRESS ` / `EVENT `);
+every other line is still the reply to whichever command preceded it.
 
 | Command | Reply | Effect |
 |---|---|---|
@@ -55,8 +57,14 @@ command preceded it).
 | `PRESS?` | `OK <mbar>` | Single-shot averaged pressure read (oversampling=3, 8 samples — favors accuracy) |
 | `PRESS START` | `OK`, then unsolicited `PRESS <mbar>` lines | Begin continuous pressure streaming (oversampling=2, ~49Hz measured) |
 | `PRESS STOP` | `OK` | Stop streaming |
+| `LED SET <r> <g> <b>` | `OK`, or `ERR BAD_ARGS` | Set the RGB status LED; each channel `0`–`255` decimal. Takes effect immediately, holds until the next `LED SET`. Blinking is not a firmware mode — the host sends repeated `LED SET` calls at whatever cadence it wants. |
 
-Any other line: `ERR UNKNOWN_COMMAND`.
+Any other line: `ERR UNKNOWN_COMMAND`. A malformed `LED SET` (wrong value
+count, non-numeric, or out of `0`–`255`) gets `ERR BAD_ARGS`.
+
+**Unsolicited (never a reply, no `OK`/`ERR` of its own):** `EVENT BUTTON
+PRESSED`, emitted once per debounced press of the status-LED button (the
+idle→pressed edge; release is not reported).
 
 There is **no state-query command** — the host is expected to track what it
 last commanded itself. The recovery pattern for reconnecting to a board that
@@ -78,6 +86,12 @@ immediately after opening the connection, not to query anything.
   because the BMP180 driver's I2C read has an unbounded wait loop with no
   timeout of its own — a watchdog reset re-runs the normal boot sequence,
   forcing everything off again.
+- The RGB status LED (common-anode ring, active-low cathodes on D9/D10/D11)
+  is forced **off** in `setup()` before the serial interface starts — no
+  boot-time exception here, unlike the light relay. `LED SET`'s `0`–`255`
+  values are plain host-facing brightness (0 = off, 255 = full); the
+  common-anode inversion (`analogWrite(pin, 255 - value)`) happens inside the
+  firmware and is never exposed on the wire.
 
 ## Testing
 
